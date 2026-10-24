@@ -1,0 +1,28 @@
+# Compiled binaries
+a.out
+*.out
+*.exe
+
+# Debug symbols
+*.dSYM/
+
+# Object files
+*.o
+*.obj
+
+# Profiling data
+*.json.gz
+*.prof
+
+# Large data files
+measurements.txt
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# System files
+.DS_Store
