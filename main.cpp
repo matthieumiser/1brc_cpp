@@ -2,7 +2,6 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstdlib>
-#include<fstream>
 #include <iostream>
 #include <string>
 #include <string_view>
@@ -41,13 +40,36 @@ int main() {
     
     Map m;
     size_t start = 0;
-    for (int i = 0; i < 10; i++) {
+    while (start < len) {
         size_t city_pos = data.find(';', start);
         size_t tmp_pos = data.find('\n', city_pos);
-        cout << data.substr(start, city_pos - start) << " | " << 
-            data.substr(city_pos + 1, tmp_pos - city_pos - 1) << "\n";
+        // cout << data.substr(start, city_pos - start) << " | " << 
+        //     data.substr(city_pos + 1, tmp_pos - city_pos - 1) << "\n";
+        auto city = data.substr(start, city_pos - start); 
+        auto tmp = stof(string(data.substr(city_pos + 1, tmp_pos - city_pos - 1)));
+        
+        m[city].push_back(tmp);
         start = tmp_pos + 1;
     }
+
+    vector<string> output;
+    for ( auto& [key, values] : m ) {
+        float min = *min_element(values.begin(), values.end());
+
+        // not the true median, good enough for now
+        size_t n = values.size() / 2;
+        nth_element(values.begin(), values.begin() + n, values.end());
+        float med = values[n];
+
+        float max = *max_element(values.begin(), values.end());
+        output.push_back(string(key) + "=" + to_string(min) + "/" + to_string(med) + "/" + to_string(max));
+    }
+    sort(output.begin(), output.end()); 
+    cout << "{";
+    for ( auto i : output ) {
+        cout << i << ", ";
+    }
+    cout << "}";
 
     return 0;
 }
