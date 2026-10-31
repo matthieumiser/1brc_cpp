@@ -7,6 +7,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+#include <sys/mman.h>
 
 // for mmap:
 #include <sys/mman.h>
@@ -37,6 +38,8 @@ int main() {
         handle_error("mmap");
 
     auto end = p + len;
+    madvise((void*)p, len, MADV_SEQUENTIAL);
+    madvise((void*)p, len, MADV_WILLNEED);
     
     Map m;
     size_t start = 0;
