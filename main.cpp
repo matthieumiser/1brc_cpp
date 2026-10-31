@@ -1,47 +1,53 @@
 #include <algorithm>
 #include <cstddef>
+#include <cstdio>
+#include <cstdlib>
 #include<fstream>
 #include <iostream>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
+// for mmap:
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 using namespace std;
+using Map = unordered_map<string_view, vector<float>>;
 
-const char* map_file(const char* fname, size_t& length);
+void handle_error(const char* msg) {
+    perror(msg); 
+    exit(255);
+}
+
 int main() {
-    string dataText;
-    ifstream stationData("measurements.txt");
-    unordered_map<string, vector<float> > dataMap;
+    int fd = open("measurements.txt", O_RDONLY);
+    if (fd == -1) 
+        handle_error("open");
 
-    while (getline(stationData, dataText)) {
-        string city = dataText.substr(0, dataText.find(";"));
-        float temp = stof(dataText.substr(dataText.find(";") + 1));
-        if (dataMap.find(city) == dataMap.end()) {
-            dataMap.insert({city, { temp }});
-        } else {
-            dataMap.at(city).push_back(temp);
-        }
+    struct stat sb;
+    if (fstat(fd, &sb) == -1)
+        handle_error("fstat");
+
+    size_t len = sb.st_size;
+    const char* p = static_cast<const char*>(mmap(NULL, len, PROT_READ, MAP_PRIVATE, fd, 0u));
+    string_view data = string_view(p, len);
+    if (p == MAP_FAILED)
+        handle_error("mmap");
+
+    auto end = p + len;
+    
+    Map m;
+    size_t start = 0;
+    for (int i = 0; i < 10; i++) {
+        size_t city_pos = data.find(';', start);
+        size_t tmp_pos = data.find('\n', city_pos);
+        cout << data.substr(start, city_pos - start) << " | " << 
+            data.substr(city_pos + 1, tmp_pos - city_pos - 1) << "\n";
+        start = tmp_pos + 1;
     }
-
-    vector<string> output;
-    for ( auto item : dataMap ) {
-        float min = *min_element(item.second.begin(), item.second.end());
-
-        // not the true median, good enough for now
-        size_t n = item.second.size() / 2;
-        nth_element(item.second.begin(), item.second.begin() + n, item.second.end());
-        float med = item.second[n];
-
-        float max = *max_element(item.second.begin(), item.second.end());
-        output.push_back(item.first + "=" + to_string(min) + "/" + to_string(med) + "/" + to_string(max));
-    }
-    sort(output.begin(), output.end()); 
-    cout << "{";
-    for ( auto i : output ) {
-        cout << i << ", ";
-    }
-    cout << "}";
 
     return 0;
 }
